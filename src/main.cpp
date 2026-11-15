@@ -67,41 +67,28 @@
 	 * will be stopped. Re-enabling the robot will restart the task, not re-start it
 	 * from where it left off.
 	 */
+	
 	void autonomous() {
 
-    Autonomous autoMode(robot.drivetrain);
+		Autonomous autoMode(robot.safeDrive);
 
-    robot.updateBehaviors();
+		robot.updateBehaviors();
+		autoMode.startDriveTest();
 
-    if (robot.behaviors.blocksForward()) {
-        robot.drivetrain.stop();
-        pros::lcd::set_text(3, "Test: Front Blocked");
-        return;
-    }
+		while (autoMode.isRunning()) {
 
-    autoMode.startDriveTest();
+			robot.updateBehaviors();
+			autoMode.update();
 
-    while (autoMode.isRunning()) {
+			pros::delay(config::LOOP_DELAY_MS);
+		}
+	}
 
-        robot.updateBehaviors();
-
-        if (robot.behaviors.blocksForward() &&
-            autoMode.isMovingForward()) {
-
-            autoMode.cancel();
-            pros::lcd::set_text(3, "Test: Obstacle");
-            break;
-        }
-
-        autoMode.update();
-        pros::delay(config::LOOP_DELAY_MS);
-    }
-}
 			
 
 	void opcontrol() {
 
-    Autonomous autoTest(robot.drivetrain);
+    Autonomous autoTest(robot.safeDrive);
 
     DriverControl driver(robot, autoTest);
 

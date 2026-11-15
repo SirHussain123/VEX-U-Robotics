@@ -6,9 +6,10 @@
 class Sensors {
 public:
     Sensors();
-
+    void initialize();
     SensorSnapshot read();
 
 private:
     pros::Distance frontDistance;
+    pros::Imu inertial;
 };

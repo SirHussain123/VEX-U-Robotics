@@ -1,7 +1,8 @@
+
 #include "autonomous/autonomous.hpp"
 
-Autonomous::Autonomous(Drivetrain& drivetrain)
-    : driveAction(drivetrain) {
+Autonomous::Autonomous(SafeDrive& safeDrive)
+    : driveAction(safeDrive) {
 }
 
 void Autonomous::startDriveTest() {
@@ -10,9 +11,13 @@ void Autonomous::startDriveTest() {
         return;
     }
 
-    driveAction.start(90, 90, 60, 2500);
-    state = TestState::Forward;
+    if (!driveAction.start(90, 90, 60, 2500)) {
+        state = TestState::Failed;
+        pros::lcd::set_text(3, "Test: Front Blocked");
+        return;
+    }
 
+    state = TestState::Forward;
     pros::lcd::set_text(3, "Test: Forward");
 }
 
@@ -28,22 +33,34 @@ void Autonomous::update() {
         return;
     }
 
+    if (result == DriveAction::Status::Blocked) {
+        state = TestState::Failed;
+        pros::lcd::set_text(3, "Test: Obstacle");
+        return;
+    }
+
     if (result == DriveAction::Status::TimedOut) {
         state = TestState::Failed;
         pros::lcd::set_text(3, "Test: TIMEOUT");
         return;
     }
 
-    if (state == TestState::Forward &&
-        result == DriveAction::Status::Completed) {
+    if (result != DriveAction::Status::Completed) {
+        return;
+    }
 
-        driveAction.start(-90, -90, 60, 2500);
+    if (state == TestState::Forward) {
+
+        if (!driveAction.start(-90, -90, 60, 2500)) {
+            state = TestState::Failed;
+            pros::lcd::set_text(3, "Test: Blocked");
+            return;
+        }
+
         state = TestState::Reverse;
-
         pros::lcd::set_text(3, "Test: Reverse");
     }
-    else if (state == TestState::Reverse &&
-             result == DriveAction::Status::Completed) {
+    else if (state == TestState::Reverse) {
 
         state = TestState::Complete;
         pros::lcd::set_text(3, "Test: PASSED");
@@ -63,8 +80,4 @@ void Autonomous::cancel() {
 bool Autonomous::isRunning() const {
     return state == TestState::Forward ||
            state == TestState::Reverse;
-}
-
-bool Autonomous::isMovingForward() const {
-    return isRunning() && driveAction.isMovingForward();
 }

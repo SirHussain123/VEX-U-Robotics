@@ -38,7 +38,7 @@ void DriverControl::run() {
         }
 
         if (stopped) {
-            robot.drivetrain.stop();
+            robot.safeDrive.stop();
             pros::lcd::set_text(1, "Stopped");
             pros::delay(config::LOOP_DELAY_MS);
             continue;
@@ -48,26 +48,13 @@ void DriverControl::run() {
         if (robot.master.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_Y)
             && !autonomous.isRunning()) {
 
-            if (!blocked) {
-                robot.drivetrain.stop();
-                autonomous.startDriveTest();
-            }
-            else {
-                pros::lcd::set_text(3, "Test: Front Blocked");
-            }
+            robot.safeDrive.stop();
+            autonomous.startDriveTest();
         }
 
         // Autonomous has drivetrain control
         if (autonomous.isRunning()) {
-
-            if (blocked && autonomous.isMovingForward()) {
-                autonomous.cancel();
-                robot.drivetrain.stop();
-                pros::lcd::set_text(3, "Test: Obstacle");
-            }
-            else {
-                autonomous.update();
-            }
+            autonomous.update();
 
             pros::delay(config::LOOP_DELAY_MS);
             continue;
@@ -96,19 +83,7 @@ void DriverControl::run() {
             turn = 0;
         }
 
-        // Apply obstacle safety
-        if (blocked) {
-
-            if (forward < 0) {
-                robot.drivetrain.arcade(forward, 0);
-            }
-            else {
-                robot.drivetrain.stop();
-            }
-        }
-        else {
-            robot.drivetrain.arcade(forward, turn);
-        }
+        robot.safeDrive.arcade(forward, turn);
 
         pros::lcd::set_text(1, "Driving");
         pros::delay(config::LOOP_DELAY_MS);

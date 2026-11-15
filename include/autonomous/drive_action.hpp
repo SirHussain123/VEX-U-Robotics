@@ -1,31 +1,29 @@
+
 #pragma once
 
-#include "subsystems/drivetrain.hpp"
+#include "safety/safe_drive.hpp"
 
 class DriveAction {
 public:
-
-    bool isMovingForward() const;
-
     enum class Status {
         Idle,
         Running,
         Completed,
-        TimedOut
+        TimedOut,
+        Blocked
     };
 
-    DriveAction(Drivetrain& drivetrain);
+    explicit DriveAction(SafeDrive& safeDrive);
 
-void start(double leftDegrees, double rightDegrees,
-           int velocity, unsigned int timeoutMs);
+    bool start(double leftDegrees, double rightDegrees,
+               int velocity, unsigned int timeoutMs);
+
     Status update();
     void cancel();
 
 private:
-    bool movingForward = false;
+    SafeDrive& safeDrive;
 
-    Drivetrain& drivetrain;
-    
     Status status = Status::Idle;
 
     double leftTarget = 0;

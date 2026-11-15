@@ -18,4 +18,8 @@ namespace config {
     // Obstacle behavior
     constexpr int FRONT_STOP_CLEARANCE_MM = 200;
     constexpr int FRONT_RELEASE_CLEARANCE_MM = 250; 
+
+    // IMU
+    constexpr int INERTIAL_PORT = 18;
+    
 }

@@ -1,29 +1,29 @@
+
 #include "autonomous/drive_action.hpp"
 #include <cmath>
 
-DriveAction::DriveAction(Drivetrain& drivetrain)
-    : drivetrain(drivetrain) {
+DriveAction::DriveAction(SafeDrive& safeDrive)
+    : safeDrive(safeDrive) {
 }
 
-void DriveAction::start(double leftDegrees, double rightDegrees,
+bool DriveAction::start(double leftDegrees, double rightDegrees,
                         int velocity, unsigned int timeoutMs) {
 
-    drivetrain.stop();
+    safeDrive.stop();
 
-    leftTarget = drivetrain.getLeftPosition() + leftDegrees;
-    rightTarget = drivetrain.getRightPosition() + rightDegrees;
+    leftTarget = safeDrive.getLeftPosition() + leftDegrees;
+    rightTarget = safeDrive.getRightPosition() + rightDegrees;
 
     startTime = pros::millis();
     timeoutDurationMs = timeoutMs;
+
+    if (!safeDrive.moveRelative(leftDegrees, rightDegrees, velocity)) {
+        status = Status::Blocked;
+        return false;
+    }
+
     status = Status::Running;
-    
-    movingForward = leftDegrees > 0 || rightDegrees > 0;
-
-    drivetrain.moveRelative(leftDegrees, rightDegrees, velocity);
-}
-
-bool DriveAction::isMovingForward() const {
-    return status == Status::Running && movingForward;
+    return true;
 }
 
 DriveAction::Status DriveAction::update() {
@@ -32,17 +32,25 @@ DriveAction::Status DriveAction::update() {
         return status;
     }
 
-    double leftError = std::abs(leftTarget - drivetrain.getLeftPosition());
-    double rightError = std::abs(rightTarget - drivetrain.getRightPosition());
+    if (safeDrive.wasRelativeMoveBlocked()) {
+        status = Status::Blocked;
+        return status;
+    }
+
+    double leftError =
+        std::abs(leftTarget - safeDrive.getLeftPosition());
+
+    double rightError =
+        std::abs(rightTarget - safeDrive.getRightPosition());
 
     const double tolerance = 10.0;
 
     if (leftError <= tolerance && rightError <= tolerance) {
-        drivetrain.stop();
+        safeDrive.stop();
         status = Status::Completed;
     }
     else if (pros::millis() - startTime >= timeoutDurationMs) {
-        drivetrain.stop();
+        safeDrive.stop();
         status = Status::TimedOut;
     }
 
@@ -51,7 +59,7 @@ DriveAction::Status DriveAction::update() {
 
 void DriveAction::cancel() {
     if (status == Status::Running) {
-        drivetrain.stop();
+        safeDrive.stop();
     }
 
     status = Status::Idle;
