@@ -12,7 +12,6 @@ The repository serves as a collaborative workspace for the team's software devel
 - C++
 - PROS (Purdue Robotics Operating System)
 - VEX V5 Robotics Platform
-- Visual Studio Code
 
 ## Copyright & Usage
 
