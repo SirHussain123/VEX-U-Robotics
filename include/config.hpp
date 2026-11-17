@@ -18,8 +18,13 @@ namespace config {
     // Obstacle behavior
     constexpr int FRONT_STOP_CLEARANCE_MM = 200;
     constexpr int FRONT_RELEASE_CLEARANCE_MM = 250; 
-
+    constexpr bool ENABLE_OBSTACLE_STOP = true;
     // IMU
     constexpr int INERTIAL_PORT = 18;
+
+    // AI Vision sensor
+    constexpr int FRONT_AI_VISION_PORT = 19;
+    constexpr int FRONT_AI_VISION_OFFSET_MM = 80;
+
     
 }

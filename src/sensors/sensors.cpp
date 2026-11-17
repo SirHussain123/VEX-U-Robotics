@@ -5,25 +5,32 @@
 
 Sensors::Sensors()
     : frontDistance(config::FRONT_DISTANCE_PORT),
-      inertial(config::INERTIAL_PORT) {
+      inertial(config::INERTIAL_PORT),
+      aiVision(config::FRONT_AI_VISION_PORT)  {
 }
 
 void Sensors::initialize() {
     inertial.reset(false);
+
+    aiVision.enable_detection_types(
+        pros::AivisionModeType::all
+    );
 }
 
 SensorSnapshot Sensors::read() {
 
     SensorSnapshot snapshot;
-
+    
     // Distance sensor
     int rawDistance = frontDistance.get_distance();
 
-    if (rawDistance == 9999) {
+    if (rawDistance > 2000 && rawDistance <= 9999) {
+        // No object within usable detection range
         snapshot.frontDistance.valid = true;
         snapshot.frontDistance.detected = false;
     }
     else if (rawDistance >= 20 && rawDistance <= 2000) {
+        // Object detected
         snapshot.frontDistance.valid = true;
         snapshot.frontDistance.detected = true;
 
@@ -32,6 +39,78 @@ SensorSnapshot Sensors::read() {
         snapshot.frontDistance.clearanceMm = std::max(
             0, rawDistance - config::FRONT_SENSOR_OFFSET_MM
         );
+    }
+    // Other readings remain invalid (fail-safe)
+
+
+    // AI Vision sensor
+    int visionCount = aiVision.get_object_count();
+
+    if (visionCount >= 0) {
+        snapshot.aiVision.valid = true;
+
+        for (int i = 0; i < visionCount; i++) {
+            auto object = aiVision.get_object(i);
+
+            VisionObjectReading reading;
+            reading.id = object.id;
+
+            if (pros::AIVision::is_type(
+                    object, pros::AivisionDetectType::object)) {
+
+                reading.type = VisionDetectionType::AIObject;
+
+                const auto& box = object.object.element;
+
+                reading.centerX = box.xoffset + box.width / 2;
+                reading.centerY = box.yoffset + box.height / 2;
+                reading.width = box.width;
+                reading.height = box.height;
+                reading.confidence = box.score;
+            }
+            else if (pros::AIVision::is_type(
+                    object, pros::AivisionDetectType::color) ||
+                     pros::AIVision::is_type(
+                    object, pros::AivisionDetectType::code)) {
+
+                reading.type = pros::AIVision::is_type(
+                    object, pros::AivisionDetectType::color)
+                    ? VisionDetectionType::Color
+                    : VisionDetectionType::ColorCode;
+
+                const auto& box = object.object.color;
+
+                reading.centerX = box.xoffset + box.width / 2;
+                reading.centerY = box.yoffset + box.height / 2;
+                reading.width = box.width;
+                reading.height = box.height;
+            }
+            else if (pros::AIVision::is_type(
+                    object, pros::AivisionDetectType::tag)) {
+
+                reading.type = VisionDetectionType::AprilTag;
+
+                const auto& tag = object.object.tag;
+
+                reading.centerX =
+                    (tag.x0 + tag.x1 + tag.x2 + tag.x3) / 4;
+                reading.centerY =
+                    (tag.y0 + tag.y1 + tag.y2 + tag.y3) / 4;
+
+                reading.width =
+                    std::max({tag.x0, tag.x1, tag.x2, tag.x3}) -
+                    std::min({tag.x0, tag.x1, tag.x2, tag.x3});
+
+                reading.height =
+                    std::max({tag.y0, tag.y1, tag.y2, tag.y3}) -
+                    std::min({tag.y0, tag.y1, tag.y2, tag.y3});
+            }
+            else {
+                continue;
+            }
+
+            snapshot.aiVision.objects.push_back(reading);
+        }
     }
 
         // Inertial sensor

@@ -1,4 +1,5 @@
 #include "robot.hpp"
+#include "config.hpp"
 
 Robot::Robot()
     : master(pros::E_CONTROLLER_MASTER),
@@ -16,7 +17,9 @@ SensorSnapshot Robot::updateBehaviors() {
 
     behaviors.update(snapshot);
 
-    safeDrive.setForwardBlocked(behaviors.blocksForward());
+    safeDrive.setForwardBlocked(
+    config::ENABLE_OBSTACLE_STOP && behaviors.blocksForward()
+    );
 
     return snapshot;
 }

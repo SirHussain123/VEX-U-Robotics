@@ -2,6 +2,7 @@
 
 #include "main.h"
 #include "sensors/sensor_snapshot.hpp"
+#include "pros/ai_vision.hpp"
 
 class Sensors {
 public:
@@ -12,4 +13,5 @@ public:
 private:
     pros::Distance frontDistance;
     pros::Imu inertial;
+    pros::AIVision aiVision;
 };
