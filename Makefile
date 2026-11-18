@@ -39,6 +39,17 @@ EXCLUDE_SRC_FROM_LIB+=$(foreach file, $(SRCDIR)/main,$(foreach cext,$(CEXTS),$(f
 # that are in the directory include/LIBNAME
 TEMPLATE_FILES=$(INCDIR)/$(LIBNAME)/*.h $(INCDIR)/$(LIBNAME)/*.hpp
 
+# Each diagnostic has a separate binary and dependency cache. The team program uses bin/ as usual.
+.PHONY: theeb-roll theeb-ticks theeb-50cm theeb-100cm
+theeb-roll theeb-ticks: theeb-%:
+	$(MAKE) quick SRCDIR=./diagnostics/theeb_$* BINDIR=./bin/$@ DEPDIR=.d/$@ USE_PACKAGE=0
+
+theeb-50cm theeb-100cm: theeb-%cm:
+	$(MAKE) quick SRCDIR=./diagnostics/theeb_distance BINDIR=./bin/$@ DEPDIR=.d/$@ USE_PACKAGE=0 EXTRA_CXXFLAGS=-DTHEEB_TEST_CM=$*
+
+$(BINDIR):
+	@mkdir -p $@
+
 .DEFAULT_GOAL=quick
 
 ################################################################################
