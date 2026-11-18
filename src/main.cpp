@@ -1,5 +1,6 @@
 	#include "main.h"
 	#include "config.hpp"
+	#include "hardware.hpp"
 	#include "robot.hpp"
 	#include "controls/driver_control.hpp"
 	#include "autonomous/autonomous.hpp"
@@ -77,7 +78,7 @@
 
 		while (autoMode.isRunning()) {
 
-			robot.updateBehaviors();
+			rohttps://github.com/SirHussain123/VEX-U-Roboticsbot.updateBehaviors();
 			autoMode.update();
 
 			pros::delay(config::LOOP_DELAY_MS);
@@ -91,7 +92,7 @@
     Autonomous autoTest(robot.safeDrive);
 
     DriverControl driver(robot, autoTest);
-
+	
     driver.run();
 }
 	
